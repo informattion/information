@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Information</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap&subset=cyrillic" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f; --text:#f4eef3; --muted:#948a94;
+  --pink:#ff5c9a; --green:#4ade80; --yellow:#fbbf24; --blue:#3b82f6;
+  --font-display:'Unbounded',sans-serif; --font-mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--font-display);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ФОН */
+.stage{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 40%, rgba(255,92,154,.04), transparent 60%), linear-gradient(rgba(140,150,220,.08) 1px, transparent 1px) 0 0 / 38px 38px, linear-gradient(90deg, rgba(140,150,220,.08) 1px, transparent 1px) 0 0 / 38px 38px, var(--bg);}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(10,10,15,.4) 60%, var(--bg) 100%);}
+
+/* НАВИГАЦИЯ */
+.top-nav{position:fixed;top:clamp(16px,3vh,28px);left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:10px;pointer-events:auto;}
+.nav-btn{font-family:var(--font-mono);font-size:clamp(.72rem,1.3vw,.82rem);letter-spacing:.1em;text-transform:uppercase;color:var(--text);background:rgba(15,15,22,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 18px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;outline:none;white-space:nowrap;}
+.nav-btn:hover{background:rgba(255,255,255,.06);color:var(--pink)}
+.nav-btn.active{color:var(--pink);border-color:rgba(255,92,154,.4);background:rgba(255,92,154,.08)}
+
+/* СТРАНИЦЫ */
+.page{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;padding:clamp(90px,16vh,160px) 24px 40px;overflow-y:auto;opacity:0;visibility:hidden;transform:translateY(24px);transition:opacity .45s ease, transform .45s cubic-bezier(.25,1,.5,1), visibility .45s;}
+.page.active{opacity:1;visibility:visible;transform:translateY(0)}
+
+.home-title{font-family:var(--font-display);font-weight:600;font-size:clamp(2.4rem,9vw,6.5rem);line-height:1.1;letter-spacing:-.05em;color:var(--text);white-space:nowrap;text-align:center;}
+.home-subtitle{font-family:var(--font-display);font-size:clamp(.9rem,1.8vw,1.15rem);color:var(--muted);line-height:1.6;text-align:center;max-width:640px;margin-top:clamp(20px,4vh,36px);}
+
+.page-title{font-family:var(--font-display);font-weight:600;font-size:clamp(1.6rem,5vw,2.8rem);line-height:1.15;letter-spacing:-.03em;color:var(--text);text-align:center;margin-bottom:clamp(24px,4vh,40px);}
+.page-title em{font-style:normal;color:var(--pink)}
+
+/* КАРТОЧКИ ВИРУСОВ */
+.virus-list{width:min(560px,100%);display:flex;flex-direction:column;gap:14px}
+.virus-card{width:100%;background:rgba(15,15,22,.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;box-shadow:0 10px 40px -10px rgba(0,0,0,.8);display:flex;flex-direction:column;gap:14px;}
+.virus-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.virus-name{font-family:var(--font-mono);font-size:1.1rem;font-weight:600;color:var(--text);letter-spacing:.02em;}
+.difficulty{display:flex;align-items:center;gap:8px}
+.difficulty-label{font-family:var(--font-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.bar{display:flex;gap:3px}
+.bar span{width:16px;height:6px;border-radius:2px;background:rgba(255,255,255,.1)}
+.bar span.on.easy{background:var(--green)}
+.bar span.on.medium{background:var(--yellow)}
+.bar span.on.hard{background:var(--pink)}
+.difficulty-value{font-family:var(--font-mono);font-size:.75rem;}
+.virus-desc{font-family:var(--font-display);font-size:clamp(.85rem,1.4vw,.95rem);color:var(--muted);line-height:1.6;}
+.virus-desc strong, .virus-desc b {color:var(--text);font-weight:600;}
+.virus-desc a {color:var(--blue);text-decoration:underline;}
+.virus-video-btn {display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:8px 14px;border-radius:8px;color:var(--pink);text-decoration:none;font-family:var(--font-mono);font-size:0.8rem;transition:0.2s;width:fit-content;}
+.virus-video-btn:hover {background:rgba(255,92,154,.1);border-color:var(--pink);}
+
+/* ВСТРОЕННЫЙ ПЛЕЕР */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* Пропорции 16:9 */
+  height: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  margin-top: 10px;
+}
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* СТИЛИ ДЛЯ АДМИНКИ */
+.admin-page-container { display: none; width: 100%; max-width: 900px; flex-direction: column; gap: 24px; margin-top: 20px; }
+.admin-page-container.show { display: flex; }
+.admin-box{width:min(420px,100%);background:rgba(15,15,22,.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;box-shadow:0 10px 40px -10px rgba(0,0,0,.8);display:flex;flex-direction:column;gap:16px;margin-top:20px;}
+.admin-label{font-family:var(--font-mono);font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text);text-align:center}
+.admin-input{width:100%;font-family:var(--font-mono);font-size:.9rem;color:var(--text);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;outline:none;transition:border-color .2s;}
+.admin-input:focus{border-color:var(--pink)}
+.admin-submit{font-family:var(--font-mono);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;cursor:pointer;transition:background .2s,color .2s,border-color .2s;}
+.admin-submit:hover{background:rgba(255,92,154,.1);color:var(--pink);border-color:rgba(255,92,154,.4)}
+.admin-error{font-family:var(--font-mono);font-size:.78rem;color:var(--pink);text-align:center;min-height:1em}
+
+.admin-tabs { display: flex; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
+.tab-btn { background:none; border:none; color:var(--muted); font-family:var(--font-mono); font-size:0.9rem; cursor:pointer; padding:8px 16px; border-radius:8px; transition:0.2s;}
+.tab-btn:hover { color:var(--text); background:rgba(255,255,255,0.05);}
+.tab-btn.active { color:var(--pink); background:rgba(255,92,154,0.1); border:1px solid rgba(255,92,154,0.3);}
+.tab-content { display: none; }
+.tab-content.active { display: flex; flex-direction: column; gap: 24px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.stat-card { background: rgba(20,20,28,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:24px; text-align:center;}
+.stat-value { font-family:var(--font-mono); font-size:2.5rem; color:var(--green); font-weight:bold; margin-bottom:8px;}
+.stat-label { font-family:var(--font-mono); font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em;}
+.logs-table { width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:0.85rem; background:rgba(20,20,28,0.7); border-radius:12px; overflow:hidden;}
+.logs-table th, .logs-table td { padding:12px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.05);}
+.logs-table th { background:rgba(255,255,255,0.02); color:var(--muted); font-weight:normal;}
+.logs-table td { color:var(--text); }
+.success-text { color:var(--green); }
+.fail-text { color:var(--pink); }
+.node-graph-container { position: relative; width: 100%; min-height: 200px; background: rgba(15, 15, 22, 0.4); border: 1px solid rgba(255,255,255,.05); border-radius: 24px; padding: 40px; overflow-x: auto; display: flex; align-items: flex-start; gap: 80px; }
+.graph-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.graph-line { stroke: rgba(255, 255, 255, 0.15); stroke-width: 2; fill: none; transition: stroke 0.3s; }
+.node-column { display: flex; flex-direction: column; gap: 16px; z-index: 2; }
+.node { background: rgba(20, 20, 28, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 14px 18px; min-width: 220px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: all 0.3s ease; position: relative; }
+.node:hover { border-color: var(--pink); box-shadow: 0 0 20px rgba(255, 92, 154, 0.2); }
+.node-main { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.node-title { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.node-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255, 255, 255, 0.05); }
+.virus-node .node-main { margin-bottom: 8px; }
+.virus-diff-info { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.7rem; }
+.virus-actions { display: none; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.05); }
+.virus-node:hover .virus-actions { display: flex; }
+.btn-mini { flex: 1; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.1); color: var(--text); padding: 6px 10px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.7rem; cursor: pointer; transition: 0.2s; }
+.btn-mini:hover { border-color: var(--pink); color: var(--pink); }
+.btn-mini.del:hover { border-color: #ff4d4d; color: #ff4d4d; }
+.admin-editor { display:flex; flex-direction:column; gap:16px; background:rgba(20,20,28,.7); backdrop-filter:blur(20px); padding:24px; border-radius:16px; border:1px solid rgba(255,255,255,.1); }
+.admin-editor h3 { font-family:var(--font-mono); font-size:1rem; color:var(--pink); margin-bottom:4px; text-transform:uppercase; letter-spacing:.1em; text-align:center; }
+.input-group { display:flex; flex-direction:column; gap:6px; }
+.input-group label { font-family:var(--font-mono); font-size:.75rem; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; }
+.admin-editor input[type="text"] { font-family:var(--font-mono); font-size:.9rem; padding:14px; border-radius:10px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.1); color:var(--text); outline:none; transition:border-color .2s; }
+.admin-editor input[type="text"]:focus { border-color:var(--pink); }
+.wysiwyg-container { display: flex; flex-direction: column; border-radius: 10px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.1); overflow: hidden; transition: border-color 0.2s; }
+.wysiwyg-container:focus-within { border-color: var(--pink); }
+.toolbar { display: flex; gap: 4px; padding: 8px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,.05); flex-wrap: wrap; }
+.toolbar-btn { background: none; border: none; color: var(--text); cursor: pointer; padding: 6px 10px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.8rem; transition: 0.2s; }
+.toolbar-btn:hover { background: rgba(255,255,255,0.1); color: var(--pink); }
+.toolbar-sep { width: 1px; background: rgba(255,255,255,0.1); margin: 0 4px; }
+.color-palette { display: flex; gap: 6px; padding: 8px 12px; background: rgba(0,0,0,0.1); border-bottom: 1px solid rgba(255,255,255,.05); }
+.color-swatch { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.2s; }
+.color-swatch:hover { transform: scale(1.2); border-color: #fff; }
+.editable-area { padding: 14px; font-family: var(--font-mono); font-size: 0.9rem; color: var(--text); line-height: 1.5; min-height: 120px; max-height: 300px; overflow-y: auto; outline: none; }
+.editable-area:empty:before { content: attr(placeholder); color: var(--muted); pointer-events: none; display: block; }
+.editable-area a { color: var(--blue); text-decoration: underline; cursor: pointer; }
+.difficulty-select { display:flex; gap:8px; margin-top:4px; }
+.diff-btn { flex:1; padding:10px; border-radius:10px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.1); color:var(--muted); font-family:var(--font-mono); font-size:.8rem; cursor:pointer; transition:all .2s; text-align:center; }
+.diff-btn:hover { background:rgba(255,255,255,.06); }
+.diff-btn[data-val="1"].active { border-color:var(--green); color:var(--green); background:rgba(74,222,128,.1); }
+.diff-btn[data-val="2"].active { border-color:var(--yellow); color:var(--yellow); background:rgba(251,191,36,.1); }
+.diff-btn[data-val="3"].active { border-color:var(--pink); color:var(--pink); background:rgba(255,92,154,.1); }
+.editor-actions { display:flex; gap:12px; margin-top:8px; }
+.btn-save { flex:1; background:var(--pink); color:#fff; border:none; padding:14px; border-radius:10px; font-weight:600; font-family:var(--font-mono); font-size:.9rem; cursor:pointer; transition:transform .2s, opacity .2s; text-transform:uppercase; letter-spacing:.1em; }
+.btn-save:hover { opacity:0.9; transform:translateY(-1px); }
+.btn-cancel { background:rgba(255,255,255,.05); color:var(--text); border:1px solid rgba(255,255,255,.1); padding:14px 20px; border-radius:10px; cursor:pointer; font-family:var(--font-mono); transition:background .2s; }
+</style>
+</head>
+<body>
+
+<div class="stage" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="top-nav">
+  <button class="nav-btn active" data-target="pageHome">Главная</button>
+  <button class="nav-btn" data-target="pageViruses">Информации о вирусах</button>
+</div>
+
+<div class="page active" id="pageHome">
+  <h1 class="home-title">Information</h1>
+  <p class="home-subtitle">Сайт с информацией о вирусах которые я пытался обойти и обошел.</p>
+</div>
+
+<div class="page" id="pageViruses">
+  <h2 class="page-title">Вирусы которые я <em>тестил</em></h2>
+  <div class="virus-list" id="publicVirusList"></div>
+</div>
+
+<!-- Скрытая страница -->
+<div class="page" id="pageAdmin">
+  <div id="adminContentWrapper" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+    <div class="admin-box" id="adminLoginBox">
+      <p class="admin-label">Введите код доступа</p>
+      <input type="password" class="admin-input" id="adminPassword" placeholder="••••••••" autocomplete="off">
+      <p class="admin-error" id="adminError"></p>
+      <button class="admin-submit" id="adminSubmit">Проверить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SERVER_URL = "https://my-admin-server.agonekg.workers.dev";
+let allViruses = [];
+let sessionToken = ""; 
+
+// --- РОУТИНГ ---
+function showPage(targetId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(targetId);
+  if (target) { target.classList.add('active'); target.scrollTop = 0; }
+  if (targetId === 'pageViruses') loadPublicData();
+}
+
+function handleRoute() {
+  if (window.location.hash === '#panel') {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    showPage('pageAdmin');
+  }
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (window.location.hash === '#panel') history.replaceState({}, '', window.location.pathname + window.location.search);
+    showPage(targetId);
+  });
+});
+window.addEventListener('hashchange', handleRoute);
+handleRoute();
+
+// --- ПУБЛИЧНАЯ ЧАСТЬ ---
+async function loadPublicData() {
+  try {
+    const res = await fetch(SERVER_URL, { method: 'GET' });
+    allViruses = await res.json();
+  } catch (e) { allViruses = []; }
+  
+  const container = document.getElementById('publicVirusList');
+  container.innerHTML = '';
+  
+  if (allViruses.length === 0) {
+    container.innerHTML = '<p class="virus-desc" style="text-align:center;">Пока нет добавленных вирусов.</p>';
+    return;
+  }
+
+  allViruses.forEach(v => {
+    let diffClass = v.difficulty == 1 ? 'easy' : (v.difficulty == 2 ? 'medium' : 'hard');
+    let diffText = v.difficulty == 1 ? 'Легкий' : (v.difficulty == 2 ? 'Средний' : 'Сложный');
+    let color = v.difficulty == 1 ? 'var(--green)' : (v.difficulty == 2 ? 'var(--yellow)' : 'var(--pink)');
+    let bars = '';
+    for (let i = 1; i <= 5; i++) bars += `<span class="${i <= (v.difficulty * 1.5) ? 'on ' + diffClass : ''}"></span>`;
+    
+    let videoHtml = '';
+    if (v.videoUrl) {
+      let finalUrl = v.videoUrl;
+      if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
+      
+      let embedUrl = finalUrl;
+      let isEmbed = false;
+
+      // YouTube
+      if (finalUrl.includes('youtube.com/watch') || finalUrl.includes('youtu.be/')) {
+        let videoId = '';
+        if (finalUrl.includes('youtu.be/')) {
+          videoId = finalUrl.split('youtu.be/')[1].split('?')[0];
+        } else {
+          const urlParams = new URLSearchParams(new URL(finalUrl).search);
+          videoId = urlParams.get('v');
+        }
+        if (videoId) {
+          embedUrl = `https://www.youtube.com/embed/${videoId}`;
+          isEmbed = true;
+        }
+      }
+      // RuTube
+      else if (finalUrl.includes('rutube.ru/video/')) {
+        let videoId = finalUrl.split('/video/')[1].split('/')[0].split('?')[0];
+        embedUrl = `https://rutube.ru/play/embed/${videoId}`;
+        isEmbed = true;
+      }
+      // VK Video
+      else if (finalUrl.includes('vk.com/video')) {
+        let videoId = finalUrl.split('video')[1].split('?')[0];
+        embedUrl = `https://vk.com/video_ext.php?oid=${videoId.split('_')[0]}&id=${videoId.split('_')[1]}`;
+        isEmbed = true;
+      }
+
+      if (isEmbed) {
+        videoHtml = `
+          <div class="video-container">
+            <iframe src="${embedUrl}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture;"></iframe>
+          </div>`;
+      } else {
+        videoHtml = `<a href="${finalUrl}" target="_blank" rel="noopener" class="virus-video-btn">▶ Смотреть видео-обход</a>`;
+      }
+    }
+
+    container.innerHTML += `
+      <div class="virus-card">
+        <div class="virus-head">
+          <div class="virus-name">${v.name}</div>
+          <div class="difficulty">
+            <span class="difficulty-label">Сложность</span>
+            <div class="bar">${bars}</div>
+            <span class="difficulty-value" style="color:${color}">${diffText}</span>
+          </div>
+        </div>
+        <div class="virus-desc">${v.desc || ''}</div>
+        ${videoHtml}
+      </div>
+    `;
+  });
+}
+
+// --- АВТОРИЗАЦИЯ И ЗАГРУЗКА ПАНЕЛИ ---
+(function initAuthFlow() {
+  const input = document.getElementById('adminPassword');
+  const submit = document.getElementById('adminSubmit');
+  const error = document.getElementById('adminError');
+  const loginBox = document.getElementById('adminLoginBox');
+
+  submit.addEventListener('click', async () => {
+    const pass = input.value;
+    if (!pass) return;
+    error.textContent = "Проверка...";
+
+    try {
+      const loginRes = await fetch(SERVER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", password: pass })
+      });
+      const loginData = await loginRes.json();
+      
+      if (loginData.success) {
+        sessionToken = loginData.token; 
+        loginBox.style.display = 'none';
+        
+        const panelRes = await fetch(SERVER_URL, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({ action: "get_panel" })
+        });
+        const panelData = await panelRes.json();
+
+        if (panelData.success) {
+          const wrapper = document.getElementById('adminContentWrapper');
+          wrapper.innerHTML += `<div class="admin-page-container show" id="adminPanel">
+            <h2 class="page-title">Управление <em>сайтом</em></h2>
+            ${panelData.html}
+          </div>`;
+
+          loadAdminGraph(); 
+          setupAdminEventListeners();
+        }
+      } else {
+        error.textContent = loginData.error || 'Неверный код';
+        input.value = '';
+      }
+    } catch (err) {
+      error.textContent = 'Ошибка сервера';
+    }
+  });
+
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit.click(); });
+})();
+
+function setupAdminEventListeners() {
+  window.formatDoc = (cmd, val=null) => { document.execCommand(cmd, false, val); document.getElementById('editDesc').focus(); };
+  window.insertCustomLink = () => {
+    const sel = window.getSelection();
+    if (sel.rangeCount === 0 || sel.isCollapsed) return alert("Выделите текст!");
+    const url = prompt("Введите ссылку:");
+    if (url) {
+      let f = url; if (!/^https?:\/\//i.test(f)) f = 'https://' + f;
+      window.formatDoc('createLink', f);
+    }
+  };
+  window.setDiff = (val) => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.diff-btn[data-val="${val}"]`).classList.add('active');
+    document.getElementById('editDifficulty').value = val;
+  };
+  window.switchTab = (tabId) => {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    if (tabId === 'tabStats') loadStats();
+  };
+  
+  document.getElementById('btnCancelEdit').addEventListener('click', () => {
+    document.getElementById('editId').value = '';
+    document.getElementById('editName').value = '';
+    document.getElementById('editDesc').innerHTML = '';
+    document.getElementById('editVideoUrl').value = '';
+    window.setDiff(1);
+    document.getElementById('editorTitle').textContent = "Добавить новый вирус";
+    document.getElementById('btnCancelEdit').style.display = 'none';
+  });
+
+  document.getElementById('btnSaveVirus').addEventListener('click', async () => {
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('editName').value.trim();
+    const diff = parseInt(document.getElementById('editDifficulty').value);
+    const desc = document.getElementById('editDesc').innerHTML.trim();
+    const videoUrl = document.getElementById('editVideoUrl').value.trim();
+
+    if (!name || !desc) return alert("Заполни название и описание!");
+
+    let newViruses = [...allViruses];
+    if (id) {
+      const idx = newViruses.findIndex(v => v.id == id);
+      if (idx !== -1) newViruses[idx] = { ...newViruses[idx], name, difficulty: diff, desc, videoUrl };
+    } else {
+      newViruses.push({ id: Date.now(), name, difficulty: diff, desc, videoUrl });
+    }
+    await saveViruses(newViruses);
+    document.getElementById('btnCancelEdit').click();
+  });
+}
+
+async function loadAdminGraph() {
+  try {
+    const res = await fetch(SERVER_URL, { method: 'GET' });
+    allViruses = await res.json();
+  } catch(e) { allViruses = []; }
+
+  const container = document.getElementById('virusNodesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (allViruses.length === 0) {
+    container.innerHTML = '<div style="color:var(--muted);font-family:var(--font-mono);font-size:0.8rem;padding:20px;">Нет вирусов в базе.</div>';
+    document.getElementById('graphSvg').innerHTML = '';
+    return;
+  }
+
+  allViruses.forEach((v) => {
+    let diffText = v.difficulty == 1 ? 'Легкий' : (v.difficulty == 2 ? 'Средний' : 'Сложный');
+    let color = v.difficulty == 1 ? 'var(--green)' : (v.difficulty == 2 ? 'var(--yellow)' : 'var(--pink)');
+    container.innerHTML += `
+      <div class="node virus-node" id="node-${v.id}">
+        <div class="node-main"><span class="node-title">${v.name}</span></div>
+        <div class="virus-diff-info"><span style="color:var(--muted);">Сложность:</span><span style="color:${color}; font-weight:bold;">${diffText}</span></div>
+        <div class="virus-actions">
+          <button class="btn-mini" onclick="editVirus(${v.id})">Ред.</button>
+          <button class="btn-mini del" onclick="deleteVirus(${v.id})">Удал.</button>
+        </div>
+      </div>
+    `;
+  });
+  drawGraphLines();
+}
+
+function drawGraphLines() {
+  const svg = document.getElementById('graphSvg');
+  const graphContainer = document.getElementById('nodeGraph');
+  if (!graphContainer) return;
+  const serverNode = graphContainer.querySelector('.node-column:first-child .node');
+  if (!serverNode) return;
+  
+  const containerRect = graphContainer.getBoundingClientRect();
+  const serverRect = serverNode.getBoundingClientRect();
+  let svgContent = '';
+  const startX = serverRect.right - containerRect.left;
+  const startY = (serverRect.top - containerRect.top) + (serverRect.height / 2);
+
+  document.querySelectorAll('.virus-node').forEach((virusNode) => {
+    const vRect = virusNode.getBoundingClientRect();
+    const endX = vRect.left - containerRect.left;
+    const endY = (vRect.top - containerRect.top) + (vRect.height / 2);
+    svgContent += `<path class="graph-line" d="M ${startX} ${startY} C ${startX + 40} ${startY}, ${endX - 40} ${endY}, ${endX} ${endY}" />`;
+  });
+  svg.innerHTML = svgContent;
+}
+
+window.addEventListener('resize', () => {
+  if(document.getElementById('adminPanel')?.classList.contains('show')) drawGraphLines();
+});
+
+window.deleteVirus = async function(id) {
+  if (!confirm('Точно удалить?')) return;
+  await saveViruses(allViruses.filter(v => v.id !== id));
+};
+
+window.editVirus = function(id) {
+  const v = allViruses.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('editId').value = v.id;
+  document.getElementById('editName').value = v.name;
+  document.getElementById('editDesc').innerHTML = v.desc || '';
+  document.getElementById('editVideoUrl').value = v.videoUrl || '';
+  window.setDiff(v.difficulty);
+  document.getElementById('editorTitle').textContent = "Редактировать вирус";
+  document.getElementById('btnCancelEdit').style.display = 'block';
+};
+
+async function loadStats() {
+  try {
+    const res = await fetch(SERVER_URL, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({ action: "get_stats" })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('statViews').textContent = data.views;
+      const logs = data.logs.reverse();
+      document.getElementById('statAttempts').textContent = logs.length;
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = logs.length === 0 ? '<tr><td colspan="3" style="text-align:center; color:var(--muted);">Попыток не было</td></tr>' : '';
+      logs.forEach(log => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${new Date(log.date).toLocaleString('ru-RU')}</td>
+            <td>${log.ip}</td>
+            <td class="${log.success ? 'success-text' : 'fail-text'}">${log.success ? 'Успех' : 'Ошибка'}</td>
+          </tr>
+        `;
+      });
+    }
+  } catch (e) { console.error(e); }
+}
+
+async function saveViruses(virusesArray) {
+  try {
+    const res = await fetch(SERVER_URL, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({ action: "save", viruses: virusesArray })
+    });
+    const data = await res.json();
+    if (data.success) {
+      allViruses = virusesArray;
+      loadAdminGraph();
+    } else alert("Ошибка сохранения: " + (data.error || ""));
+  } catch (e) { alert("Ошибка сети"); }
+}
+</script>
+</body>
+</html>
